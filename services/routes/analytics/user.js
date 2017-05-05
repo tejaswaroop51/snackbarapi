@@ -349,7 +349,7 @@ User.post('/submitOrder', (req, res) => {
             /*products.forEach((product) => {
                 items.push({product_id: product.ProductId, quantity: product.Quantity});
             }); */
-            items.push({"product_id": "B00XA0DP86", "quantity": 1});
+            items.push({"product_id": "B00XA0DP86", "quantity": 1},{"product_id": "B01FCVU1Z0", "quantity": 1},{"product_id": "B00CXAEDH6", "quantity": 2});
             productInfo.client_token = configs.clientToken;
             productInfo.retailer = configs.retailer;
             productInfo.products = items;
