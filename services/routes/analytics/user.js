@@ -262,4 +262,38 @@ User.post('/updateQuantity', (req, res) => {
 
 });
 
+/**
+ * Accepts productId, quantity information as input
+ * Input Type: Json
+ * {
+ *      "requestId":STRING,
+ *      "status":STRING
+ * }
+ * * **/
+
+User.post('/updateOrderInfo', (req, res) => {
+    const connection = connectToDB();
+    connection.connect((err) => {
+        if(!err) {
+            connection.query('USE snackbar');
+            let userParams = "'"+req.body.requestId+"', '"+req.body.status+"'";
+            console.log("Database is connected ...");
+            connection.query("CALL UpdateOrderInfo(" + userParams + ")", function(err, results, fields) {
+                if (err) {
+                    console.log(err);
+                    res.json({ error: "failToSaveUser"});
+                    connection.destroy();
+                    console.log("Database connection is safely closed ...");
+                } else {
+                    res.json({ results });
+                    connection.destroy();
+                    console.log("Database connection is safely closed ...");
+                }
+            });
+        }
+    });
+
+});
+
+
 module.exports = User;
