@@ -346,9 +346,10 @@ User.post('/submitOrder', (req, res) => {
             let productInfo = {};
             let products= JSON.parse(cartInfo)['cartInfo'];
             const items = [];
-            products.forEach((product) => {
+            /*products.forEach((product) => {
                 items.push({product_id: product.ProductId, quantity: product.Quantity});
-            });
+            }); */
+            items.push({"product_id": "B00XA0DP86", "quantity": 1});
             productInfo.client_token = configs.clientToken;
             productInfo.retailer = configs.retailer;
             productInfo.products = items;
