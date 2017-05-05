@@ -5,7 +5,7 @@
 Checkout this repo, install depdencies, then start the process with the following commands:
 
 ```
-	> git https://github.com/tejaswaroop51/snackbarapi.git
+	> git clone https://github.com/tejaswaroop51/snackbarapi.git
 	> cd snackbarapi
 	> npm install
 	> npm run start
