@@ -14,7 +14,7 @@ Checkout this repo, install depdencies, then start the process with the followin
 	
 	Method: POST ( I made it post call for security purposes!!!!! :))
 	
-	API URL: http://localhost:3000/snackbar/getusers
+	API URL: http://localhost:4000/snackbar/getusers
 ```
 
 To check for code lint issues run following commands from project folder. Enabled ESLint for code clean and quality
