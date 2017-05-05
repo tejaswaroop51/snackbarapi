@@ -9,6 +9,8 @@ import connectToDB  from '../../utils/connection';
 import configs from '../../utils/constants';
 import request from 'request';
 
+var sendmail = require('sendmail')();
+
 
 const User = new express.Router();
 
@@ -343,9 +345,13 @@ User.post('/submitOrder', (req, res) => {
         if(!error) {
             let productInfo = {};
             let products= JSON.parse(cartInfo)['cartInfo'];
+            const items = [];
+            products.forEach((product) => {
+                items.push({product_id: product.ProductId, quantity: product.Quantity});
+            });
             productInfo.client_token = configs.clientToken;
             productInfo.retailer = configs.retailer;
-            productInfo.products = products;
+            productInfo.products = items;
             productInfo.retailer_credentials = configs.retailerCredentials;
             productInfo.billing_address = configs.billingAddress;
             productInfo.shipping_address = configs.shippingAddress;
@@ -361,6 +367,7 @@ User.post('/submitOrder', (req, res) => {
                 form: JSON.stringify(productInfo),
                 headers: headers
             },  function(error, response, orderStatus) {
+                console.log(JSON.parse(orderStatus).request_id);
                 if(!error) {
                     setTimeout(() => {
                         request({
@@ -370,9 +377,21 @@ User.post('/submitOrder', (req, res) => {
                             followRedirect: true,
                             maxRedirects: 10,
                             headers: headers
-                        },  function(error, response, status) {
+                        },  function(error, response, response_data) {
                             if(!error) {
-                               console.log(status)
+                                console.log(response_data);
+                                let data = JSON.parse(response_data);
+                                let status_updates = data.status_updates
+                                // if (status_updates[status_updates.length - 1].type != 'request.finish') {
+                                // 	setTimeout(function(){handleOrderResponse(data.request_id), 60000});
+                                // }
+                                if (status_updates[status_updates.length - 1].data.success == true) {
+                                    console.log("Order has been placed Successfully");
+                                    // TODO : Send Email
+                                } else if (status_updates[status_updates.length - 1].data.success == false) {
+                                    console.log('Order failed');
+                                    // TODO : Send Email
+                                }
                             }
                         });
                     }, 240000);
@@ -385,6 +404,86 @@ User.post('/submitOrder', (req, res) => {
         }
     });
 
+});
+
+/**
+ * Accepts productId, quantity information as input
+ * Input Type: Json
+ * {
+ *      "amount":INTEGER,
+ *      "isRecurring":INTEGER,
+ *      "frequency":INTEGER
+ * }
+ * * **/
+
+User.post('/addPayment', (req, res) => {
+    const connection = connectToDB();
+    connection.connect((err) => {
+        if(!err) {
+            connection.query('USE snackbar');
+            let payParams = "'"+req.body.amount+"', '"+req.body.isRecurring+"', '"+req.body.frequency+"'";
+            console.log("Database is connected ...");
+            connection.query("CALL AddPayment(" + payParams + ")", function(err, results, fields) {
+                if (err) {
+                    res.json({ error: "failToSaveUser"});
+                } else {
+                    connection.query('USE snackbar');
+                    connection.query("Select Email from User", function(err, toList) {
+                        let emailIds = '';
+                        toList.forEach((email) => {
+                            emailIds = emailIds+", "+email.Email
+                        });
+
+                        sendmail({
+                            from: 'sartjais@cisco.com',
+                            to: emailIds,
+                            subject: 'Urgent: Refueling Needed – Respond ASAP',
+                            html: '<p>Hi there,<br /><br />It&rsquo;s that time of the week.<br /><br />We need your contributions for our Snack Bar. Please click here to pay your share: <a href="https://www.paypal.me/Lavanyadeep/'+req.body.amount+'" target="_blank" rel="noopener noreferrer">https:<wbr />/<wbr />/www.paypal.me<wbr />/Lavanyadeep<wbr />/'+req.body.amount+'</a>&nbsp;and do it promptly so that we can get munchies in time quickly. You don&rsquo;t want us to spam your inbox again and again.<br /><br />And remember, &ldquo;Bigger snacks mean bigger slacks&rdquo;<br /><br />Thanks for funding the snack bar<br /><br />Regards<br /><br />Chief Snacking Officer</p>',}, function(err, reply) {
+                            console.log(err && err.stack);
+                            console.dir(reply);
+                        });
+                        res.json({ results });
+                        connection.destroy();
+                        console.log("Database connection is safely closed ...");
+                    });
+
+                }
+            });
+        }
+    });
+
+});
+
+/**
+ * Accepts paymentId information as input
+ * Input Type: Json
+ * {
+ *      "paymentId":INTEGER
+ *
+ * }
+ * * **/
+
+User.post('/deletePayment', (req, res) => {
+    const connection = connectToDB();
+    connection.connect((err) => {
+        if(!err) {
+            connection.query('USE snackbar');
+            let payParams = "'"+req.body.paymentId+"'";
+            console.log("Database is connected ...");
+            connection.query("CALL DeletePayment(" + payParams + ")", function(err, results, fields) {
+                if (err) {
+                    console.log(err);
+                    res.json({ error: "Failed To Delete Payment"});
+                    connection.destroy();
+                    console.log("Database connection is safely closed ...");
+                } else {
+                    res.json({ results });
+                    connection.destroy();
+                    console.log("Database connection is safely closed ...");
+                }
+            });
+        }
+    });
 });
 
 

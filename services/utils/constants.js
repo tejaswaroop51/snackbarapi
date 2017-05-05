@@ -4,15 +4,15 @@
 
 module.exports = {
 
-    hostname : "localhost",
-    port: "3000",
+    hostname : "10.155.209.58",
+    port: "4000",
     host     : '10.155.209.67',
     user     : 'root',
     password : 'snackers',
     clientToken : "A142BEA700631F47F71A2BAB",
     retailer: "amazon",
     retailerCredentials: {
-        "email": "lmaheshw@cisco.com",
+        "email": "ciscowarriorssnackbar@gmail.com",
         "password": "cisco123"
     },
     billingAddress: {
