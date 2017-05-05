@@ -103,4 +103,32 @@ User.post('/getusers', (req, res) => {
 
 });
 
+/**
+ * Accepts UserId information as input
+ * Input Type: Json
+ * {
+ *      "userId":"",
+ * }
+ * * **/
+
+User.post('/deleteuser', (req, res) => {
+    const connection = connectToDB();
+    connection.connect((err) => {
+        if(!err) {
+            connection.query('USE snackbar');
+            let userParams = "'"+req.body.userId+"'";
+            console.log("Database is connected ...");
+            connection.query("CALL DeleteUser(" + userParams + ")", function(err, results, fields) {
+                if (err) {
+                    console.log(err);
+                    res.json({ error: "failToSaveUser"});
+                } else {
+                    res.json({ results });
+                }
+            });
+        }
+    });
+
+});
+
 module.exports = User;
