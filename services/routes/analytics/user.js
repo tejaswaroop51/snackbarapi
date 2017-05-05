@@ -7,11 +7,14 @@ import logger from '../../logger';
 import security from '../../utils/securityheaders';
 import connectToDB  from '../../utils/connection';
 import configs from '../../utils/constants';
+import request from 'request';
 
 
 const User = new express.Router();
 
 security(User);  // Adding security params
+
+const headers = { 'Content-Type': 'application/json' };
 
 
 /**
@@ -34,6 +37,7 @@ User.post('/adduser', (req, res) => {
         if(!err) {
             connection.query('USE snackbar');
             let userParams = "'"+req.body.name+"', '"+req.body.paypalInfo+"', '"+req.body.email+"', '"+req.body.phone+"', '"+req.body.isInCharge+"'";
+            console.log(userParams);
             console.log("Database is connected ...");
             connection.query("CALL AddUser(" + userParams + ")", function(err, results, fields) {
                 if (err) {
@@ -294,6 +298,96 @@ User.post('/updateOrderInfo', (req, res) => {
     });
 
 });
+
+
+/**
+ * Returns orders info information as output
+ * * **/
+
+User.post('/getOrderInfo', (req, res) => {
+    const connection = connectToDB();
+    connection.connect((err) => {
+        if(!err) {
+            connection.query('USE snackbar');
+            console.log("Database is connected ...");
+            connection.query("CALL GetOrderInfo()", function(err, results, fields) {
+                if (err) {
+                    console.log(err);
+                    res.json({ error: "failTogetDataFromServer"});
+                    connection.destroy();
+                    console.log("Database connection is safely closed ...");
+                } else {
+                    res.json({ orders: results[0] });
+                    connection.destroy();
+                    console.log("Database connection is safely closed ...");
+                }
+            });
+        }
+    });
+
+});
+
+/**
+ * Submit Order
+ * * **/
+
+User.post('/submitOrder', (req, res) => {
+    request({
+        uri: "http://"+configs.hostname+":"+configs.port+"/snackbar/cartinfo",
+        method: "POST",
+        timeout: 10000,
+        followRedirect: true,
+        maxRedirects: 10,
+        headers: headers
+    }, function(error, response, cartInfo) {
+        if(!error) {
+            let productInfo = {};
+            let products= JSON.parse(cartInfo)['cartInfo'];
+            productInfo.client_token = configs.clientToken;
+            productInfo.retailer = configs.retailer;
+            productInfo.products = products;
+            productInfo.retailer_credentials = configs.retailerCredentials;
+            productInfo.billing_address = configs.billingAddress;
+            productInfo.shipping_address = configs.shippingAddress;
+            productInfo.payment_method = configs.paymentMethod;
+            productInfo.shipping_method = configs.shippingMethod;
+            console.log(JSON.stringify(productInfo));
+            request({
+                uri: "https://api.zinc.io/v0/order",
+                method: "POST",
+                timeout: 10000,
+                followRedirect: true,
+                maxRedirects: 10,
+                form: JSON.stringify(productInfo),
+                headers: headers
+            },  function(error, response, orderStatus) {
+                if(!error) {
+                    setTimeout(() => {
+                        request({
+                            uri: "https://api.zinc.io/v0/order/"+JSON.parse(orderStatus).request_id,
+                            method: "GET",
+                            timeout: 10000,
+                            followRedirect: true,
+                            maxRedirects: 10,
+                            headers: headers
+                        },  function(error, response, status) {
+                            if(!error) {
+                               console.log(status)
+                            }
+                        });
+                    }, 240000);
+
+
+                }
+            });
+
+
+        }
+    });
+
+});
+
+
 
 
 module.exports = User;
