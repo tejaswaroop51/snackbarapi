@@ -8,7 +8,7 @@ Checkout this repo, install depdencies, then start the process with the followin
 	> git https://github.com/tejaswaroop51/snackbarapi.git
 	> cd snackbarapi
 	> npm install
-	> npm start
+	> npm run start
 	
 	After server is started in your local, you can check check the API from postman/restclient using following
 	
